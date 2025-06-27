@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36221.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PioneerScenarioAnalyzer", "PioneerScenarioAnalyzer\PioneerScenarioAnalyzer.csproj", "{F6D977AF-39D1-4BAF-859E-284033D7CACE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {607637E7-5FE2-4E00-A31E-F18A8C85761C}
+	EndGlobalSection
+EndGlobal
