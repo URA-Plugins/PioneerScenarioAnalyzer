@@ -5,6 +5,8 @@ VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PioneerScenarioAnalyzer", "PioneerScenarioAnalyzer\PioneerScenarioAnalyzer.csproj", "{F6D977AF-39D1-4BAF-859E-284033D7CACE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UmamusumeResponseAnalyzer", "..\..\UmamusumeResponseAnalyzer\UmamusumeResponseAnalyzer\UmamusumeResponseAnalyzer.csproj", "{716BA918-473A-5CA1-A15B-A41CD3F6F895}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6D977AF-39D1-4BAF-859E-284033D7CACE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{716BA918-473A-5CA1-A15B-A41CD3F6F895}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{716BA918-473A-5CA1-A15B-A41CD3F6F895}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{716BA918-473A-5CA1-A15B-A41CD3F6F895}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{716BA918-473A-5CA1-A15B-A41CD3F6F895}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

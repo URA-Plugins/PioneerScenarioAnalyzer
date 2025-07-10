@@ -1,0 +1,13 @@
+{
+  "Author": "离披",
+  "InternalName": "PioneerScenarioAnalyzer",
+  "Name": "解析野人杯回合信息",
+  "Description": "解析野人杯回合信息",
+  "Changelog": "",
+  "Version": "1.0.0",
+  "Dependencies": [],
+  "Targets": [],
+  "RepositoryUrl": "https://github.com/URA-Plugins/PioneerScenarioAnalyzer",
+  "DownloadUrl": "https://gh.shuise.dev/github.com/URA-Plugins/PioneerScenarioAnalyzer/releases/latest/download/PioneerScenarioAnalyzer.zip",
+  "LastUpdate": "1751719983"
+}
