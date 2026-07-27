@@ -1,15 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	<TargetFramework>net10.0</TargetFramework>
+    <IsUraPlugin>true</IsUraPlugin>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <Version>1.0.0</Version>
+
+    <!-- URA 插件元数据：供发布 manifest 使用 -->
+    <PluginInternalName>PioneerScenarioAnalyzer</PluginInternalName>
+    <PluginDisplayName>解析野人杯回合信息</PluginDisplayName>
+    <PluginAuthor>离披</PluginAuthor>
+    <PluginDescription>解析野人杯回合信息</PluginDescription>
+    <PluginRepositoryUrl>https://github.com/URA-Plugins/PioneerScenarioAnalyzer</PluginRepositoryUrl>
+    <PluginTargets>Cygames</PluginTargets>
+    <PluginDependencies>EventLoggerPlugin</PluginDependencies>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\UmamusumeResponseAnalyzer\UmamusumeResponseAnalyzer\UmamusumeResponseAnalyzer.csproj" />
-    <ProjectReference Include="..\..\EventLoggerPlugin\EventLoggerPlugin.csproj" />
+    <ProjectReference Include="..\..\EventLoggerPlugin\EventLoggerPlugin.csproj">
+      <Private>False</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
@@ -26,15 +37,5 @@
       <LastGenOutput>Game.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-
-  <ItemGroup>
-    <None Update="manifest.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="copy /Y &quot;$(TargetPath)&quot; &quot;%25localappdata%25/UmamusumeResponseAnalyzer/Plugins/PioneerScenarioAnalyzer/&quot;" />
-  </Target>
 
 </Project>
