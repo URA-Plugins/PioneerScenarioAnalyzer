@@ -76,7 +76,7 @@ public sealed class PioneerScenarioAnalyzer : IPlugin
         }
     }
 
-    public void Dispose()
+    public ValueTask DisposeAsync()
     {
         HistoryView? view;
         Workspace? publishedWorkspace;
@@ -106,6 +106,7 @@ public sealed class PioneerScenarioAnalyzer : IPlugin
         view?.Stop();
         if (removePanel)
             publishedWorkspace!.RemovePanel(TrainingPanelKey);
+        return ValueTask.CompletedTask;
     }
 
     public async Task ConfigPromptAsync(

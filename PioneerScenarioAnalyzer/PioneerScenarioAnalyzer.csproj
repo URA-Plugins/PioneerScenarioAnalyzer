@@ -13,7 +13,6 @@
     <PluginAuthor>离披</PluginAuthor>
     <PluginDescription>解析野人杯回合信息</PluginDescription>
     <PluginRepositoryUrl>https://github.com/URA-Plugins/PioneerScenarioAnalyzer</PluginRepositoryUrl>
-    <PluginTargets>Cygames</PluginTargets>
     <PluginDependencies>EventLoggerPlugin</PluginDependencies>
   </PropertyGroup>
 
