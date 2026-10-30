@@ -25,6 +25,7 @@ var capturePath = args.Length == 2 && args[0] == "--capture" ? Path.GetFullPath(
 if (args.Length != 0 && capturePath is null)
     throw new ArgumentException("Usage: PioneerScenarioAnalyzerSmoke [--capture <framebuffer.json>]");
 using var ui = new WorkspaceSmokeSession(120, 40);
+
 Run("isolated loading without EventLogger", TestIsolatedLoading);
 Run("endpoint projections and input boundaries", TestEndpoints);
 Run("command IDs, summer training and island totals", TestTraining);
@@ -124,6 +125,8 @@ void TestTraining()
         Require(normal.IndexOf("速度", StringComparison.Ordinal) < normal.IndexOf("耐力", StringComparison.Ordinal), "Training rows must follow stat order, not packet order.");
 
         var summer = Fixtures.Response(turn: 37, summer: true);
+        Dispatch(context, "check_event", summer);
+        ScreenContains("无法上岛");
         Array.Reverse(summer.data.home_info.command_info_array);
         summer.data.home_info.command_info_array = [.. summer.data.home_info.command_info_array, new()
         {
@@ -137,8 +140,111 @@ void TestTraining()
             command_id = 3101,
             params_inc_dec_info_array = Fixtures.Parameters(6, includeVital: false)
         }];
+        summer.data.pioneer_data_set.shima_training_info = new()
+        {
+            remain_num = 1,
+            shima_training_partner_info_array = [new() { facility_id = 106, training_partner_id_array = [1, 2, 101] }]
+        };
         Dispatch(context, "shima_training_exec", summer);
-        ScreenContains("速度", "耐力", "(5%)", "Lv1 | 1", "属性: 50", "Pt: 10", "支援卡 2 人 | NPC 1 人");
+        ScreenContains("速度", "耐力", "(5%)", "Lv1 | 1", "支援卡 2 人 | 友情 0 人 | NPC 1 人 | 总属性 50 | 总Pt 10");
+
+        var captured = Fixtures.CapturedIsland();
+        Dispatch(context, "check_event", captured);
+        ScreenContains("支援卡 6 人 | 友情 1 人 | NPC 6 人 | 总属性 141 | 总Pt 80");
+        var cells = ui.CaptureCells(120, 40);
+        RequireForeground(cells, "支援卡 6", 4, new(StandardColor.Green));
+        RequireForeground(cells, "友情 1", 3, new(StandardColor.BrightCyan));
+        var island = captured.data.home_info.command_info_array.Single(command => command.command_id == 3101);
+        var facilities = captured.data.pioneer_data_set.shima_training_info;
+
+        // An ordinary friendship training does not count when the island assigns that card to the beach house.
+        facilities.shima_training_partner_info_array =
+        [
+            new() { facility_id = 105, training_partner_id_array = [1025, 1027, 1031, 1040, 1065, 1069] },
+            new() { facility_id = 106, training_partner_id_array = [1, 2, 3, 4, 5, 6] }
+        ];
+        Dispatch(context, "check_event", captured);
+        ScreenContains("支援卡 6 人 | 友情 0 人 | NPC 6 人 | 总属性 141 | 总Pt 80");
+
+        // The five island facilities use stat order, independently of ordinary training placements.
+        facilities.shima_training_partner_info_array =
+        [
+            .. Enumerable.Range(1, 5).Select(position => new SingleModePioneerShimaTrainingPartnerInfo
+                { facility_id = 100 + position, training_partner_id_array = [position] }),
+            new() { facility_id = 106, training_partner_id_array = [6, 1025, 1027, 1031, 1040, 1065, 1069] }
+        ];
+        captured.data.chara_info.evaluation_info_array[0].evaluation = 80;
+        Dispatch(context, "check_event", captured);
+        ScreenContains("支援卡 6 人 | 友情 5 人 | NPC 6 人 | 总属性 141 | 总Pt 80");
+
+        island.training_partner_array = [1, 2, 3, 5, 6, 1025, 1027];
+        foreach (var facility in facilities.shima_training_partner_info_array)
+            facility.training_partner_id_array = [.. facility.training_partner_id_array.Intersect(island.training_partner_array)];
+        captured.data.chara_info.evaluation_info_array[4].evaluation = 79;
+        Dispatch(context, "check_event", captured);
+        ScreenContains("支援卡 5 人 | 友情 3 人 | NPC 2 人 | 总属性 141 | 总Pt 80");
+
+        // Turn 48's island gains cross 1200 speed: the displayed gain follows the normal training scale.
+        captured.data.chara_info.speed = 1173;
+        island.params_inc_dec_info_array = [.. new[] { 61, 64, 55, 40, 136, 200 }.Select((value, index) =>
+            new SingleModeParamsIncDecInfo { target_type = index == 5 ? 30 : index + 1, value = value })];
+        captured.data.pioneer_data_set.command_info_array.Single(command => command.command_id == 3101).params_inc_dec_info_array = [];
+        Dispatch(context, "check_event", captured);
+        ScreenContains("总属性 390 | 总Pt 200");
+
+        island.training_partner_array = [];
+        facilities.shima_training_partner_info_array = [];
+        Dispatch(context, "check_event", captured);
+        ScreenContains("支援卡 0 人 | 友情 0 人 | NPC 0 人 | 总属性 390 | 总Pt 200");
+
+        island.training_partner_array = [6];
+        facilities.shima_training_partner_info_array = [new() { facility_id = 105, training_partner_id_array = [6] }];
+        foreach (var (cardId, passionEffect) in new[] { (30241, 0), (30137, 102), (30067, 101), (30081, 100) })
+        {
+            captured.data.chara_info.support_card_array[5].support_card_id = cardId;
+            captured.data.chara_info.evaluation_info_array[5].evaluation = passionEffect == 0 ? 79 : 30;
+            captured.data.chara_info.chara_effect_id_array = [];
+            facilities.shima_training_partner_info_array[0].facility_id = 105;
+            Dispatch(context, "check_event", captured);
+            ScreenContains("支援卡 1 人 | 友情 0 人 | NPC 0 人");
+
+            if (passionEffect == 0)
+                captured.data.chara_info.evaluation_info_array[5].evaluation = 80;
+            else
+                captured.data.chara_info.chara_effect_id_array = [passionEffect];
+            foreach (var facilityId in new[] { 101, 105, 106 })
+            {
+                facilities.shima_training_partner_info_array[0].facility_id = facilityId;
+                Dispatch(context, "check_event", captured);
+                ScreenContains($"支援卡 1 人 | 友情 {(facilityId == 106 ? 0 : 1)} 人 | NPC 0 人");
+            }
+        }
+
+        var tickets = Fixtures.CapturedIsland();
+        var info = tickets.data.pioneer_data_set.pioneer_info;
+        var ticketCases = new (int Turn, int Remaining, int Points, int[] Thresholds, int Granted, string Expected)[]
+        {
+            (19, 0, 84, [200, 400], 0, "岛训练暂不可用，距下一张券还需要 116 Pt"),
+            (19, 0, 492, [200, 500], 1, "岛训练暂不可用，距下一张券还需要 8 Pt"),
+            (19, 0, 564, [200, 400], 2, "本阶段岛训练已全部完成"),
+            (25, 0, 0, [200, 500], 2, "岛训练暂不可用，距下一张券还需要 200 Pt"),
+            (25, 0, 200, [200, 500], 1, "岛训练暂不可用，距下一张券还需要 300 Pt"),
+            (25, 0, 200, [500, 200, 400], 1, "岛训练暂不可用，距下一张券还需要 200 Pt"),
+            (25, 1, 564, [200, 400], 2, "支援卡 6 人 | 友情 1 人 | NPC 6 人 | 总属性 141 | 总Pt 80"),
+            (64, 0, 84, [200, 400], 0, "岛训练暂不可用，距下一张券还需要 116 Pt"),
+            (65, 0, 84, [200, 400], 0, "本阶段岛训练已全部完成"),
+            (65, 1, 564, [200, 400], 2, "支援卡 6 人 | 友情 1 人 | NPC 6 人 | 总属性 141 | 总Pt 80")
+        };
+        foreach (var test in ticketCases)
+        {
+            tickets.data.chara_info.turn = test.Turn;
+            tickets.data.pioneer_data_set.shima_training_info.remain_num = test.Remaining;
+            info.pioneer_pt = test.Points;
+            info.gain_shima_training_pt_array = test.Thresholds;
+            info.last_gain_rights_num = test.Granted;
+            Dispatch(context, "check_event", tickets);
+            FindToken(ui.CaptureCells(120, 40), test.Expected);
+        }
     }
     finally { plugin.DisposeAsync().AsTask().GetAwaiter().GetResult(); }
 }
@@ -165,8 +271,12 @@ void TestOriginalDashboard()
                 .ToDictionary(view => view.Id!, view => view.FrameToScreen()));
             Require(frames["pioneer-header:date"].Top == frames["pioneer-header:vital"].Top, "Status panels are not horizontal.");
             Require(frames["pioneer-header:date"].Height == 3 && frames["pioneer-important"].Height == 5, "Original status/important heights changed.");
-            Require(frames["pioneer-scenario:cycle"].Top == frames["pioneer-scenario:island-partners"].Top, "Scenario panels are not horizontal.");
-            Require(frames["pioneer-scenario:island-partners"].Width > frames["pioneer-scenario:cycle"].Width, "Original scenario panel ratios were lost.");
+            Require(frames["pioneer-scenario:cycle"].Top == frames["pioneer-scenario:island"].Top, "Scenario panels are not horizontal.");
+            Require(frames["pioneer-scenario:island"].Width > frames["pioneer-scenario:cycle"].Width, "Island summary must be wider than the cycle panel.");
+            FindToken(cells, "支援卡 3 人 | 友情 1 人 | NPC 1 人 | 总属性 50 | 总Pt 10", frames["pioneer-scenario:island"]);
+            RequireForeground(cells, "支援卡 3", 4, new(StandardColor.BrightRed));
+            RequireForeground(cells, "友情 1", 3, new(StandardColor.BrightCyan));
+            Require(!cells.Cast<Cell>().Any(cell => cell.Grapheme.Contains('★')), "Friendship must use the original colors without a star.");
             Require(frames["pioneer-training:5"].Right <= frames["pioneer-extras"].Left, "Extras must be beside the five training tables.");
             var extras = frames["pioneer-extras"];
             Require(extras.Height < frames["pioneer-main"].Height, "Extras must fit its content instead of stretching to the main panel height.");

@@ -155,7 +155,7 @@ internal sealed class TrainingPartner
             if (Shining)
                 Priority = supportCard.IsFriendCard ? PartnerPriority.友人 : PartnerPriority.闪;
 
-            segments.Add(new($"{(Shining ? "★" : string.Empty)}{name}", Priority switch
+            segments.Add(new(name, Priority switch
             {
                 PartnerPriority.友人 => PioneerDisplayColor.Green,
                 PartnerPriority.闪 => PioneerDisplayColor.Aqua,

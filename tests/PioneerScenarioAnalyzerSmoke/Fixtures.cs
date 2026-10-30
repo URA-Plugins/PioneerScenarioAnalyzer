@@ -10,9 +10,7 @@ static class Fixtures
 
     internal static SingleModePioneerCheckEventResponse Dashboard()
     {
-        Write(Database.EVENT_NAME_FILEPATH, new List<Story>());
-        Write(Database.NAMES_FILEPATH, new List<BaseName>
-        {
+        InitializeNames([
             new BaseName(101, "理事长", "理事长"),
             new BaseName(1001, "气槽", "气槽"),
             new BaseName(1002, "玉藻", "玉藻"),
@@ -20,15 +18,7 @@ static class Fixtures
             new SupportCardName(30001, "气槽", "气槽", 101, 1001),
             new SupportCardName(30002, "玉藻", "玉藻", 102, 1002),
             new SupportCardName(30003, "理事", "理事", 0, 1003)
-        }, new() { TypeNameHandling = TypeNameHandling.All });
-        Write(Database.SKILLS_FILEPATH, new List<UmamusumeResponseAnalyzer.Entities.SkillData>());
-        Write(Database.SKILL_UPGRADE_SPECIALITY_FILEPATH, new List<SkillUpgradeSpeciality>());
-        Write(Database.TALENT_SKILLS_FILEPATH, new Dictionary<int, TalentSkillData[]>());
-        Write(Database.FACTOR_IDS_FILEPATH, new Dictionary<int, string>());
-        Write(Database.SADDLE_IDS_FILEPATH, new List<int>());
-        Write(Database.SUCCESSION_RELATION_FILEPATH, new SuccessionRelationTable());
-        if (Database.Initialize().GetAwaiter().GetResult() != DatabaseAvailability.Ready)
-            throw new InvalidOperationException("Pioneer dashboard name fixture did not load.");
+        ]);
 
         var response = Response(vital: 30);
         var chara = response.data.chara_info;
@@ -53,7 +43,99 @@ static class Fixtures
         commands[2].training_partner_array = [2];
         commands[3].failure_rate = 40;
         commands[4].failure_rate = 0;
+        response.data.home_info.command_info_array = [.. commands, new()
+        {
+            command_id = 3101,
+            params_inc_dec_info_array = Parameters(4),
+            training_partner_array = [1, 2, 3, 101],
+            tips_event_partner_array = []
+        }];
+        response.data.pioneer_data_set.command_info_array = [.. response.data.pioneer_data_set.command_info_array, new()
+        {
+            command_id = 3101,
+            params_inc_dec_info_array = Parameters(6, includeVital: false)
+        }];
+        response.data.pioneer_data_set.shima_training_info = new()
+        {
+            remain_num = 1,
+            shima_training_partner_info_array =
+            [
+                new() { facility_id = 101, training_partner_id_array = [1, 101] },
+                new() { facility_id = 103, training_partner_id_array = [2] },
+                new() { facility_id = 106, training_partner_id_array = [3] }
+            ]
+        };
         return response;
+    }
+
+    internal static SingleModePioneerCheckEventResponse CapturedIsland()
+    {
+        // 26-10-30 03-36-40-856R: only public card metadata and island-relevant fields are retained.
+        var cardIds = new[] { 30282, 30304, 30256, 30264, 30289, 30257 };
+        var types = new[] { 101, 105, 102, 103, 106, 0 };
+        var bonds = new[] { 100, 100, 100, 100, 86, 78 };
+        var npcs = new[] { 102, 1025, 1027, 1031, 1040, 1065, 1069 };
+        InitializeNames([
+            .. cardIds.Select((id, index) => new SupportCardName(id, $"支援{index + 1}", $"支援{index + 1}", types[index], 1001 + index)),
+            .. new[] { 30241, 30137, 30067, 30081 }.Select(id => new SupportCardName(id, "团卡", "团卡", 0, 1006)),
+            .. cardIds.Select((_, index) => new BaseName(1001 + index, $"角色{index + 1}", $"角色{index + 1}")),
+            .. npcs.Select(id => new BaseName(id, $"NPC{id}", "NPC"))
+        ]);
+        var response = Response(turn: 19);
+        response.data.pioneer_data_set.pioneer_info = new()
+        {
+            pioneer_pt = 589,
+            gain_shima_training_pt_array = [200, 500],
+            last_gain_rights_num = 2
+        };
+        var chara = response.data.chara_info;
+        chara.support_card_array = [.. cardIds.Select((id, index) => new SingleModeSupportCard { position = index + 1, support_card_id = id })];
+        chara.evaluation_info_array = [.. bonds.Select((bond, index) => new EvaluationInfo { target_id = index + 1, evaluation = bond })];
+        int[][] partners = [[1069], [3, 5, 1027, 1031], [2, 102], [4, 1065], [1, 1025, 1040]];
+        for (var index = 0; index < partners.Length; index++)
+            response.data.home_info.command_info_array[index].training_partner_array = partners[index];
+        response.data.home_info.command_info_array = [.. response.data.home_info.command_info_array, new()
+        {
+            command_id = 3101,
+            params_inc_dec_info_array = [.. new[] { 24, 24, 21, 21, 40, 70 }.Select((value, index) =>
+                new SingleModeParamsIncDecInfo { target_type = index == 5 ? 30 : index + 1, value = value })],
+            training_partner_array = [1, 2, 3, 4, 5, 6, 1025, 1027, 1031, 1040, 1065, 1069],
+            tips_event_partner_array = []
+        }];
+        response.data.pioneer_data_set.command_info_array = [.. response.data.pioneer_data_set.command_info_array, new()
+        {
+            command_id = 3101,
+            params_inc_dec_info_array = [.. new[] { 3, 1, 2, 1, 4, 10 }.Select((value, index) =>
+                new SingleModeParamsIncDecInfo { target_type = index == 5 ? 30 : index + 1, value = value })]
+        }];
+        response.data.pioneer_data_set.shima_training_info = new()
+        {
+            remain_num = 1,
+            shima_training_partner_info_array =
+            [
+                new() { facility_id = 105, training_partner_id_array = [1, 1025, 1040] },
+                new() { facility_id = 103, training_partner_id_array = [2] },
+                new() { facility_id = 102, training_partner_id_array = [3, 5, 1027, 1031] },
+                new() { facility_id = 104, training_partner_id_array = [4, 1065] },
+                new() { facility_id = 106, training_partner_id_array = [6] },
+                new() { facility_id = 101, training_partner_id_array = [1069] }
+            ]
+        };
+        return response;
+    }
+
+    static void InitializeNames(List<BaseName> names)
+    {
+        Write(Database.EVENT_NAME_FILEPATH, new List<Story>());
+        Write(Database.NAMES_FILEPATH, names, new() { TypeNameHandling = TypeNameHandling.All });
+        Write(Database.SKILLS_FILEPATH, new List<UmamusumeResponseAnalyzer.Entities.SkillData>());
+        Write(Database.SKILL_UPGRADE_SPECIALITY_FILEPATH, new List<SkillUpgradeSpeciality>());
+        Write(Database.TALENT_SKILLS_FILEPATH, new Dictionary<int, TalentSkillData[]>());
+        Write(Database.FACTOR_IDS_FILEPATH, new Dictionary<int, string>());
+        Write(Database.SADDLE_IDS_FILEPATH, new List<int>());
+        Write(Database.SUCCESSION_RELATION_FILEPATH, new SuccessionRelationTable());
+        if (Database.Initialize().GetAwaiter().GetResult() != DatabaseAvailability.Ready)
+            throw new InvalidOperationException("Pioneer name fixture did not load.");
     }
 
     static void Write<T>(string path, T value, JsonSerializerSettings? settings = null)

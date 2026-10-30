@@ -1,3 +1,4 @@
+using UmamusumeResponseAnalyzer;
 using static PioneerScenarioAnalyzer.i18n.Game;
 
 namespace PioneerScenarioAnalyzer;
@@ -57,22 +58,52 @@ internal static class Handler
 
         var island = data.home_info.command_info_array.FirstOrDefault(command => command.command_id == 3101);
         var scenarioIsland = data.pioneer_data_set.command_info_array.FirstOrDefault(command => command.command_id == 3101);
-        if (island is not null && scenarioIsland is not null)
+        if (island is null || scenarioIsland is null)
         {
-            var islandValues = island.params_inc_dec_info_array.Concat(scenarioIsland.params_inc_dec_info_array).ToArray();
-            builder.ScenarioPanels.Add(new("island-gain", 3, PioneerDisplayLine.Plain(
-                $"属性: {islandValues.Where(value => value.target_type is >= 1 and <= 5).Sum(value => value.value)} | Pt: {islandValues.Where(value => value.target_type == 30).Sum(value => value.value)}")));
-            var supportCount = island.training_partner_array.Count(position => position is >= 1 and <= 6);
-            builder.ScenarioPanels.Add(new("island-partners", 6, PioneerDisplayLine.Styled(
-                new("支援卡 "), new($"{supportCount}", supportCount == 6 ? PioneerDisplayColor.Green : PioneerDisplayColor.Red),
-                new($" 人 | NPC {island.training_partner_array.Length - supportCount} 人"))));
+            builder.ScenarioPanels.Add(new("island", 9, PioneerDisplayLine.Plain("无法上岛")));
+        }
+        else if (data.pioneer_data_set.shima_training_info.remain_num == 0)
+        {
+            var pioneerInfo = data.pioneer_data_set.pioneer_info;
+            // 三年九月前半发放最后两张券，此后不再通过开发 Pt 发券。
+            var nextTicketPt = turn.Turn < 65
+                ? pioneerInfo.gain_shima_training_pt_array.Where(pt => pt > pioneerInfo.pioneer_pt).Select(pt => (int?)pt).Min()
+                : null;
+            builder.ScenarioPanels.Add(new("island", 9, PioneerDisplayLine.Plain(nextTicketPt is { } targetPt
+                ? $"岛训练暂不可用，距下一张券还需要 {targetPt - pioneerInfo.pioneer_pt} Pt"
+                : "本阶段岛训练已全部完成")));
         }
         else
         {
-            builder.ScenarioPanels.Add(new("island-gain", 3, PioneerDisplayLine.Plain("无法上岛")));
-            builder.ScenarioPanels.Add(new("island-partners", 6, PioneerDisplayLine.Plain("无法上岛")));
+            var islandValues = island.params_inc_dec_info_array.Concat(scenarioIsland.params_inc_dec_info_array).ToArray();
+            var totalStats = turn.Stats.Select((value, index) =>
+                TurnInfo.ReviseOver1200(value + islandValues.Where(parameter => parameter.target_type == index + 1).Sum(parameter => parameter.value)) -
+                TurnInfo.ReviseOver1200(value)).Sum();
+            var totalPt = islandValues.Where(value => value.target_type == 30).Sum(value => value.value);
+            var supportCount = island.training_partner_array.Count(position => position is >= 1 and <= 6);
+            var supportCards = turn.SupportCards;
+            var evaluations = turn.Evaluations;
+            // 岛内设施决定友情；海之家（106）的参与者不触发友情训练。
+            var friendshipCount = data.pioneer_data_set.shima_training_info.shima_training_partner_info_array
+                .Where(facility => facility.facility_id is >= 101 and <= 105)
+                .Sum(facility => facility.training_partner_id_array.Count(position =>
+                {
+                    if (position is not (>= 1 and <= 6)) return false;
+                    var card = Database.Names.GetRequiredSupportCard(supportCards[position]);
+                    return evaluations[position].evaluation >= 80 && card.CanTriggerFriendshipTraining(TurnInfoPioneer.TrainIds[facility.facility_id - 101]) ||
+                        card.Id switch
+                        {
+                            30137 => data.chara_info.chara_effect_id_array.Contains(102),
+                            30067 => data.chara_info.chara_effect_id_array.Contains(101),
+                            30081 => data.chara_info.chara_effect_id_array.Contains(100),
+                            _ => false
+                        };
+                }));
+            builder.ScenarioPanels.Add(new("island", 9, PioneerDisplayLine.Styled(
+                new("支援卡 "), new($"{supportCount}", supportCount == 6 ? PioneerDisplayColor.Green : PioneerDisplayColor.Red),
+                new(" 人 | 友情 "), new($"{friendshipCount}", PioneerDisplayColor.Aqua),
+                new($" 人 | NPC {island.training_partner_array.Length - supportCount} 人 | 总属性 {totalStats} | 总Pt {totalPt}"))));
         }
-
         var bestScore = stats.Max(stat => stat.FiveValueGain.Sum());
         foreach (var command in turn.CommandInfoArray)
         {
