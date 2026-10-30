@@ -5,14 +5,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>2026.10.31</Version>
+    <Version>2026.10.31.1</Version>
 
     <!-- URA 插件元数据：供发布 manifest 使用 -->
     <PluginInternalName>PioneerScenarioAnalyzer</PluginInternalName>
     <PluginDisplayName>解析野人杯回合信息</PluginDisplayName>
     <PluginAuthor>离披</PluginAuthor>
     <PluginDescription>解析野人杯回合信息</PluginDescription>
-    <PluginChangelog>更新岛训练人数、友情、属性和技能点汇总，以及训练券状态显示；更新构建依赖。</PluginChangelog>
+    <PluginChangelog>使用 SDK 2026.10.31.1 重新构建，匹配 Terminal.Gui 2.5.0。</PluginChangelog>
     <PluginRepositoryUrl>https://github.com/URA-Plugins/PioneerScenarioAnalyzer</PluginRepositoryUrl>
   </PropertyGroup>
 
