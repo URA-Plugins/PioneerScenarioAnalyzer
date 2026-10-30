@@ -56,22 +56,4 @@ dotnet build .\PioneerScenarioAnalyzer\PioneerScenarioAnalyzer.csproj -c Release
 
 ## 验证与发布
 
-专属 smoke 使用当前 Host 源码运行。`UraTestHostRoot` 指向 Host 仓库根目录：
-
-```powershell
-dotnet run --project .\tests\PioneerScenarioAnalyzerSmoke -p:UraTestHostRoot=K:\repos\UmamusumeResponseAnalyzer -p:GenerateUraPluginManifestOnBuild=false -p:PackageUraPluginOnBuild=false -p:DeployUraPluginToLocalAppDataOnBuild=false
-```
-
-覆盖端点分发、独立加载、训练数值、Display 组合、面板布局与颜色、窗口缩放、滚动与 history。EventLogger 联动由 Host 的 `PioneerEventLoggerSmoke` 使用双方实际注册的请求和响应处理器验证。
-
-共用 workflow 从已解析 Host NuGet 包的源码提交构建测试 Host；该提交需要包含 `PioneerScenarioAnalyzerSmoke` 的 `InternalsVisibleTo` 声明。发布顺序为包含此测试声明的 Host 包、Pioneer 插件。
-
 在 Windows 仓库根执行 `act workflow_dispatch --artifact-server-path "$env:TEMP/ura-act-artifacts"`。本地与 GitHub 使用同一份 workflow；版本 tag 触发 GitHub Release 发布。环境要求、共用 workflow 本地映射和发布规则见 [URA plugin workflows](https://github.com/URA-Plugins/.github/blob/v1/README.md)。
-
-## 本仓测试
-
-`tests/PioneerScenarioAnalyzerSmoke` 默认运行本插件的生命周期、历史配置和显示检查，并检查发布边界。测试工具由本仓 `tests/Support` 持有。
-
-```powershell
-dotnet run --project tests/PioneerScenarioAnalyzerSmoke -p:UraTestHostRoot=<Host源码绝对路径> -p:GenerateUraPluginManifestOnBuild=false -p:PackageUraPluginOnBuild=false -p:DeployUraPluginToLocalAppDataOnBuild=false
-```

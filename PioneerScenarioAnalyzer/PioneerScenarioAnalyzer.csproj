@@ -17,10 +17,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="PioneerScenarioAnalyzerSmoke" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="i18n\Game.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
